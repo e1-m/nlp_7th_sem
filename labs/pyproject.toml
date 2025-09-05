@@ -1,0 +1,9 @@
+[project]
+name = "labs"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.10"
+dependencies = [
+    "datasets==2.14.6",
+    "notebook>=7.4.5",
+]
