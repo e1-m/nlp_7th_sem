@@ -1,5 +1,4 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 from lab1.comparator import Comparator
 from lab1.preprocessor import Preprocessor
@@ -12,58 +11,41 @@ class SearchEngine:
                  preprocessor: Preprocessor,
                  repository: DocumentRepository,
                  vectorizer: Vectorizer,
-                 comparator: Comparator, ):
+                 comparator: Comparator):
         self.preprocessor = preprocessor
         self.repository = repository
         self.vectorizer = vectorizer
         self.comparator = comparator
 
-    def _preprocess_documents(self) -> dict[int, str]:
-        documents = self.repository.get_all_documents()
-        processed_docs = {}
-        for doc in documents:
-            processed_docs[doc.id] = self.preprocessor.process(f"{doc.display_name} {doc.description}")
-        return processed_docs
+        self._fitted = False
+        self._doc_ids = None
+        self._doc_matrix = None
 
-    def search(self, query: str):
-        processed_documents = self._preprocess_documents()
+    def _preprocess_documents(self) -> dict[int, str]:
+        docs = self.repository.get_all_documents()
+        return {
+            doc.id: self.preprocessor.process(f"{doc.display_name} {doc.description}")
+            for doc in docs
+        }
+
+    def fit(self):
+        processed_docs = self._preprocess_documents()
+        self.vectorizer.fit(list(processed_docs.values()))
+
+        self._doc_ids = np.array(list(processed_docs.keys()))
+        self._doc_matrix = np.vstack([
+            self.vectorizer.vectorize(text) for text in processed_docs.values()
+        ])
+        self._fitted = True
+
+    def search(self, query: str, top_k: int = 10):
+        if not self._fitted:
+            self.fit()
 
         processed_query = self.preprocessor.process(query)
-        self.vectorizer.fit(list(processed_documents.values()))
         query_vector = self.vectorizer.vectorize(processed_query)
-        results = []
-        for doc_id, document in processed_documents.items():
-            vector = self.vectorizer.vectorize(document)
-            similarity = self.comparator.compare(query_vector, vector)
-            results.append((doc_id, similarity))
 
-        results.sort(key=lambda x: x[1], reverse=True)
-        return results
+        sims = self.comparator.compare(query_vector, self._doc_matrix)
+        top_indices = np.argsort(sims)[::-1][:top_k]
 
-
-class SklearnSearchEngine:
-    def __init__(self, repository, preprocessor):
-        self.repository = repository
-        self.preprocessor = preprocessor
-        self.vectorizer = TfidfVectorizer()
-
-    def _preprocess_documents(self) -> dict[int, str]:
-        documents = self.repository.get_all_documents()
-        processed_docs = {}
-        for doc in documents:
-            processed_docs[doc.id] = self.preprocessor.process(f"{doc.display_name} {doc.description}")
-        return processed_docs
-
-    def search(self, query: str, top_k: int | None = None) -> list[tuple[int, float]]:
-        documents = self._preprocess_documents()
-
-        doc_ids, texts = zip(*documents.items())
-        doc_matrix = self.vectorizer.fit_transform(texts)
-
-        query_vector = self.vectorizer.transform([query])
-
-        similarities = cosine_similarity(query_vector, doc_matrix).flatten()
-
-        results = sorted(zip(doc_ids, similarities), key=lambda x: x[1], reverse=True)
-
-        return results if top_k is None else results[:top_k]
+        return [int(self._doc_ids[i]) for i in top_indices]
