@@ -50,9 +50,9 @@ class BPETokenizer:
     def __init__(self, vocab_size=1000, min_freq=2):
         self.vocab_size = vocab_size
         self.min_freq = min_freq
-        self.vocab = {}  # token → id
-        self.idx2token = {}  # id → token
-        self.merges = []  # list of (a, b) merge rules in order
+        self.vocab = {}
+        self.idx2token = {}
+        self.merges = []
 
     def train(self, text):
         corpus = _prepare_corpus(text)

@@ -1,24 +1,33 @@
 from pathlib import Path
 
 from lab2.src.tokenizer import BPETokenizer
+from lab2.src.utils import bytes_per_token, tokens_to_words_ratio, chars_per_token
 
 BASE_PATH = Path(__file__).parent.parent
 
 
 def main():
-    train = False
-    vocab_path = BASE_PATH / "vocabs" / "bpe_tokenizer.json"
+    vocab_path = BASE_PATH / "vocabs" / "en_ukr_tokenizer_vocab.json"
 
-    tokenizer = BPETokenizer(vocab_size=1000, min_freq=2)
+    training_texts_base_path = BASE_PATH / 'data' / 'training'
+    training_text_paths = [
+        training_texts_base_path / 'constitutional_patriotism_en.txt',
+        training_texts_base_path / 'habermas_ukr.txt',
+        training_texts_base_path / 'rousseau_en.txt',
+        training_texts_base_path / 'rousseau_ukr.txt',
+    ]
+
+    tokenizer = BPETokenizer(vocab_size=3000, min_freq=3)
+
+    train = False
 
     if train:
-        training_text_path = BASE_PATH / 'data' / 'training' / 'constitutional_patriotism.txt'
-        tokenizer.train(training_text_path.read_text())
+        tokenizer.train("\n\n".join(path.read_text(encoding="utf-8") for path in training_text_paths))
         tokenizer.save(vocab_path)
     else:
         tokenizer.load(vocab_path)
 
-    print("\n[INFO] Training complete.")
+    print("\nBPETokenizer")
     print(f"Vocab size: {len(tokenizer.vocab)}")
     print(f"Merges learned: {len(tokenizer.merges)}")
 
@@ -32,6 +41,9 @@ def main():
     print(f"Encoded IDs: {encoded}")
     print(f"Encoded Tokens: {tokens}")
     print(f"Decoded text: {decoded}")
+    print(f"Bytes per token: {bytes_per_token(test_sentence, tokens)}")
+    print(f"Tokens to words: {tokens_to_words_ratio(test_sentence, tokens)}")
+    print(f"Chars per token: {chars_per_token(test_sentence, tokens)}")
 
 
 if __name__ == "__main__":
