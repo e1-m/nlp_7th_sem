@@ -6,6 +6,21 @@ from lab2.src.utils import bytes_per_token, tokens_to_words_ratio, chars_per_tok
 BASE_PATH = Path(__file__).parent.parent
 
 
+def print_stats(tokenizer, sentence):
+    encoded = tokenizer.encode(sentence)
+    tokens = tokenizer.get_tokens(encoded)
+    decoded = tokenizer.decode(encoded)
+
+    print("\n[TEST] Encoding/Decoding:")
+    print(f"Original: {sentence}")
+    print(f"Encoded IDs: {encoded}")
+    print(f"Encoded Tokens: {tokens}")
+    print(f"Decoded text: {decoded}")
+    print(f"Bytes per token: {bytes_per_token(sentence, tokens)}")
+    print(f"Tokens to words: {tokens_to_words_ratio(sentence, tokens)}")
+    print(f"Chars per token: {chars_per_token(sentence, tokens)}")
+
+
 def main():
     vocab_path = BASE_PATH / "vocabs" / "en_ukr_tokenizer_vocab.json"
 
@@ -30,20 +45,6 @@ def main():
     print("\nBPETokenizer")
     print(f"Vocab size: {len(tokenizer.vocab)}")
     print(f"Merges learned: {len(tokenizer.merges)}")
-
-    test_sentence = "the dog sleeps on the constitution"
-    encoded = tokenizer.encode(test_sentence)
-    tokens = tokenizer.get_tokens(encoded)
-    decoded = tokenizer.decode(encoded)
-
-    print("\n[TEST] Encoding/Decoding demo:")
-    print(f"Original: {test_sentence}")
-    print(f"Encoded IDs: {encoded}")
-    print(f"Encoded Tokens: {tokens}")
-    print(f"Decoded text: {decoded}")
-    print(f"Bytes per token: {bytes_per_token(test_sentence, tokens)}")
-    print(f"Tokens to words: {tokens_to_words_ratio(test_sentence, tokens)}")
-    print(f"Chars per token: {chars_per_token(test_sentence, tokens)}")
 
 
 if __name__ == "__main__":
